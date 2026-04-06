@@ -11,6 +11,79 @@
 
 ---
 
+## STM32CubeMX 配置步骤
+
+### 1. 新建工程
+
+1. 打开 STM32CubeMX，点击 **File → New Project**
+2. 在芯片选择界面搜索 `STM32F103C8T6`，选中后点击 **Start Project**
+![新建工程](img/1.png)
+
+### 2. 配置系统时钟（RCC）
+
+1. 左侧 **Pinout & Configuration → System Core → RCC**
+2. **High Speed Clock (HSE)** 选择 `Disable`（使用内部 HSI，8 MHz）
+![关闭使用内部时钟](img/2.png)
+3. 切换到 **Clock Configuration** 标签页，确认 SYSCLK 来源为 HSI，频率为 8 MHz
+![使用晶振](img/3.png)
+
+### 3. 配置 GPIO 引脚
+
+#### **PC13（LED 输出）：**
+1. 在芯片引脚图上点击 **PC13**，选择 `GPIO_Output`
+2. 左侧 **System Core → GPIO**，点击 PC13 行进行详细配置：
+   - GPIO output level：`Low`
+   - GPIO mode：`Output Push Pull`（推挽输出）
+   - GPIO Pull-up/Pull-down：`No pull-up and no pull-down`
+   - Maximum output speed：`Low`
+   - User Label：`LED`（可选）
+
+#### **PB12（按键输入）：**
+1. 在芯片引脚图上点击 **PB12**，选择 `GPIO_Input`
+2. 点击 PB12 行进行详细配置：
+   - GPIO mode：`Input mode`
+   - GPIO Pull-up/Pull-down：`Pull-up`（上拉）
+   - User Label：`KEY`（可选）
+
+![配置GPIO](img/4.png)
+
+### 4. 配置工程输出
+
+1. 切换到 **Project Manager** 标签页
+2. **Project** 子页：
+   - Project Name：填写工程名（如 `01GPIO`）
+   - Project Location：选择保存路径
+   - Toolchain/IDE：根据开发环境选择，各选项区别如下：
+
+     | 选项 | 说明 | 适用场景 |
+     |------|------|----------|
+     | `STM32CubeIDE` | ST 官方 IDE，基于 Eclipse，开箱即用 | 使用 STM32CubeIDE 开发 |
+     | `MDK-ARM` | Keil MDK，商业 IDE，调试功能强 | 使用 Keil 开发 |
+     | `EWARM` | IAR Embedded Workbench，商业 IDE | 使用 IAR 开发 |
+     | `Makefile` | 生成 Makefile，命令行构建 | Linux 环境或自定义工具链 |
+     | `CMake` | 生成 CMakeLists.txt，跨平台构建系统 | VSCode + STM32 插件 |
+
+     **本实验选择 `CMake`**，原因是使用 VSCode 配合 **STM32 VS Code Extension** 插件`STM32CubeIDE for VS Code`进行开发。该插件原生支持 CMake 工程，可在 VSCode 中直接完成编译、烧录和调试，无需安装 STM32CubeIDE 或 Keil。
+   ![保存工程文件](img/5.png)
+3. **Code Generator** 子页：
+   - 勾选 **Generate peripheral initialization as a pair of '.c/.h' files per peripheral**（可选）
+   ![生成代码](img/6.png)
+
+### 5. 生成代码
+
+点击右上角 **GENERATE CODE**，CubeMX 自动生成包含 `MX_GPIO_Init` 的工程框架。
+
+### 6. 添加用户代码
+
+在生成的 `Core/Src/main.c` 中，找到 `while (1)` 循环内的 `USER CODE BEGIN 3` 注释区域，添加：
+
+```c
+GPIO_PinState key_state = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12);
+HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, key_state);
+```
+
+---
+
 ## 核心代码解析
 
 ### 1. GPIO 初始化（`MX_GPIO_Init`）
