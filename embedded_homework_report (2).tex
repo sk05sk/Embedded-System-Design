@@ -1,0 +1,238 @@
+\documentclass[12pt,a4paper]{ctexart}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{15pt}
+\fancyfoot[C]{第 \thepage 页，共 \pageref{LastPage} 页}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=true,
+  numbers=left,
+  numberstyle=\tiny,
+  keywordstyle=\color{blue},
+  commentstyle=\color{teal},
+  showstringspaces=false
+}
+
+% 以下信息建议学生按自己的实际情况直接修改。
+\newcommand{\course}{嵌入式系统设计}
+\newcommand{\homeworkname}{作业1 GPIO}
+\newcommand{\studentname}{孙凯}
+\newcommand{\studentid}{3124001830}
+\newcommand{\classname}{微电子 4 班}
+\newcommand{\submitdate}{\today}
+
+\fancyhead[L]{\course}
+\fancyhead[R]{\homeworkname}
+
+\newcommand{\placeholderfigure}[2]{
+  \begin{figure}[H]
+    \centering
+    \IfFileExists{#1}{
+      \includegraphics[width=0.95\linewidth]{#1}
+    }{
+      \fbox{\parbox[c][5cm][c]{0.9\linewidth}{\centering
+      请将图片文件放入 \texttt{#1}\\
+      然后重新编译文档}}
+    }
+    \caption{#2}
+  \end{figure}
+}
+
+\begin{document}
+
+\pagenumbering{arabic}
+\setcounter{tocdepth}{1}
+
+\begin{center}
+  {\zihao{3}\bfseries \homeworkname \par}
+  \vspace{0.8em}
+  \begin{tabular}{ccc}
+    \studentname & \studentid & \classname
+  \end{tabular}
+  \\
+  \vspace{0.4em}
+  \submitdate
+\end{center}
+
+\vspace{0.5em}
+\tableofcontents
+\vspace{0.8em}
+
+\section{作业目标与任务要求}
+
+本节简要说明本次作业要完成的功能、验收标准。
+
+    1.  实现功能：按键按下时 LED 亮，松开时 LED 灭。
+    
+    2.  硬件资源和软件工具：STM32F103C8T6 开发板,ST-Link,USB 数据线、杜邦线、按键、LED。
+    
+    3.  结果判定标准：按键按下时LED不会出现闪烁，能够稳定发光。
+    
+
+\section{实验环境}
+
+\subsection{硬件环境}
+
+\begin{itemize}
+  \item 开发板：STM32F103C8T6 开发板
+  \item 调试器：ST-Link
+  \item 连接器件：USB 数据线、杜邦线、按键、LED 等
+\end{itemize}
+
+\subsection{软件环境}
+
+\begin{itemize}
+  \item STM32CubeIDE
+\end{itemize}
+
+\section{实验原理与方案说明}
+
+本节应结合具体作业内容，说明所用外设或中间件的原理。
+
+\begin{enumerate}[label=\arabic*.]
+  \item 硬件连接关系：LED 负极 → PA7，LED 正极 → 3.3V ，按键一端 →                                             PB12，按键另一端 → GND 。
+  \item 外设配置原理
+
+        PA7    模式：GPIO\_Output  输出类型：Push-Pull（推挽输出） 
+                                上拉 / 下拉：无   
+
+                                推挽输出可以稳定输出高 / 低电平，控制LED 亮灭
+
+        PB12    模式：GPIO\_Input     上拉 / 下拉：Pull-up（内部上拉）
+
+                                开启内部上拉后，按键未按下时引脚保持稳定高电平；按下                                  按键后引脚被拉低 
+  \item 程序执行逻辑：系统初始化 → 循环检测按键状态 → 根据按键状态控制                                           LED 
+\end{enumerate}
+
+\section{STM32CubeMX 配置过程}
+
+关键配置步骤：
+
+\begin{enumerate}[label=\arabic*.]
+  \item 芯片型号选择：STM32F103C8T6 
+  \item RCC 时钟配置：使用内部 HSI，8 MHz 
+  \item SYS 调试接口配置：Serial Wire 
+  \item GPIO外设配置：如图
+
+\end{enumerate}
+
+ 
+\placeholderfigure{figures/cubemx-config.png}{CubeMX 关键配置截图}
+
+\section{程序设计与关键代码说明}
+
+\subsection{主程序结构}
+
+\begin{lstlisting}[language=C,caption={主循环关键代码示例}]
+while (1)
+{
+  GPIO_PinState key_state = HAL_GPIO_ReadPin(GPIOB,         GPIO_PIN_12);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, key_state);
+
+}
+\end{lstlisting}
+功能说明：第一个函数读取按键状态，第二个函数根据按键状态控制PA7电平高低，进而控制灯的亮灭。
+
+\placeholderfigure{figures/code-main.png}{关键代码截图}
+
+\section{程序流程图}
+
+
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+    node distance=10mm and 18mm,
+    every node/.style={font=\small},
+    startstop/.style={rectangle, rounded corners, minimum width=28mm, minimum height=9mm, draw=black, fill=gray!15},
+    process/.style={rectangle, minimum width=34mm, minimum height=9mm, draw=black, fill=blue!8},
+    decision/.style={diamond, aspect=2, draw=black, fill=orange!12, inner sep=1pt},
+    line/.style={-Latex, thick}
+  ]
+    \node[startstop] (start) {开始};
+    \node[process, below=of start] (init) {系统初始化};
+    \node[process, below=of init] (task) {执行主功能};
+    \node[decision, below=of task, yshift=-2mm] (judge) {按键是否按下};
+    \node[process, below left=of judge] (branch1) {LED亮};
+    \node[process, below right=of judge] (branch2) {LED灭};
+    \node[startstop, below=18mm of judge] (endloop) {循环};
+
+    \draw[line] (start) -- (init);
+    \draw[line] (init) -- (task);
+    \draw[line] (task) -- (judge);
+    \draw[line] (judge) -- node[left] {是} (branch1);
+    \draw[line] (judge) -- node[right] {否} (branch2);
+    \draw[line] (branch1) |- (endloop);
+    \draw[line] (branch2) |- (endloop);
+  \end{tikzpicture}
+  \caption{程序流程图示例}
+\end{figure}
+
+\section{实验结果与现象分析}
+
+
+
+实验现象描述：按下按键时LED亮，不松手时LED持续亮，松开按键LED灭。与预期结果一致。
+
+
+\placeholderfigure{figures/result-photo.jpg}{实验现象照片}
+
+\placeholderfigure{figures/result-serial.png}{运行结果截图或上位机交互截图}
+
+\section{问题分析与调试记录}
+
+暂无
+
+\section{思考题或课后作业回答}
+
+1.  输入端口PB12，输入按键状态，输出端口PA7，输出高低电平控制LED的亮灭，GND->按键->PB12，PA7->LED->3.3V
+
+2.PB12上拉输入原因：未按按键时，PB12为高电平，按下按键时，PB12为低电平
+
+3.PA7推挽输出：可以输出高低电平，驱动能力强，低速输出低能耗，可靠性强
+
+4.结果与预期一致
+
+\section{总结}
+
+掌握了通过cubemx配置rcc，sys，gpio；能够正确读取gpio口的电平状态；能够使LED准确稳定发光；后续可以尝试控制多个LED亮灭。
+
+
+\section{附录}
+
+可在附录中补充：
+
+\begin{itemize}
+  \item 完整关键代码。
+  \item 更多截图或照片。
+  \item 参考资料。
+  \item 自己完成的扩展任务说明。
+\end{itemize}
+
+\end{document}
